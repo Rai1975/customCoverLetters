@@ -1,6 +1,9 @@
 # Consolidating all tools in one place
 import os
 import json
+from tex_to_pdf import cv_pipeline
+from job_scraper import scrape
+from strands import tool
 
 def get_experiences():
     path = os.path.join(os.getcwd(), "data/experiences.json")
@@ -56,6 +59,7 @@ def get_projects():
 
     return formatted_string
 
+@tool
 def get_profile_summary():
     combined_string = ""
     combined_string += "\n\n" + get_experiences()
@@ -63,6 +67,19 @@ def get_profile_summary():
     combined_string += "\n\n" + get_coursework()
 
     return combined_string
+
+@tool
+def generate_cover_letter(company_name: str, title: str, body: str):
+    # Generates cover letter
+    try:
+        cv_pipeline(company_name, title, body)
+        return "Success!"
+    except Exception as e:
+        return f"Error: {e}"
+
+@tool
+def job_description_scraper(url):
+    return scrape(url)
 
 if __name__ == "__main__":
     print(get_profile_summary())

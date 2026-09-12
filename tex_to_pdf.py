@@ -7,6 +7,36 @@ load_dotenv()
 TEX_FILE = "cover_letter_template.tex"
 OUTPUT_DIR = os.path.join(os.getcwd(), "pdf_out")
 
+def escape_latex(text):
+    """Escape LaTeX special characters in a string so it compiles safely."""
+    replacements = {
+        "&": "\\&",
+        "%": "\\%",
+        "$": "\\$",
+        "#": "\\#",
+        "_": "\\_",
+        "{": r"\\{",
+        "}": r"\\}",
+        "~": r"\\textasciitilde{}",
+        "^": r"\\textasciicircum{}",
+    }
+    for char, escaped in replacements.items():
+        text = text.replace(char, escaped)
+    return text
+
+def normalize_unicode(text):
+    """Replace common 'smart' typography with LaTeX-safe equivalents."""
+    replacements = {
+        "\u2014": "---",  # em dash
+        "\u2013": "--",   # en dash
+        "\u2018": "`",    # left single quote
+        "\u2019": "'",    # right single quote
+        "\u201c": "``",   # left double quote
+        "\u201d": "''",   # right double quote
+    }
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
+    return text
 
 def generate_cover_letter(
         company_name,
@@ -25,7 +55,7 @@ def generate_cover_letter(
     first_name = os.getenv('FIRST_NAME') if first_name is None else first_name
     last_name = os.getenv('LAST_NAME') if last_name is None else last_name
 
-    with open(os.path.join(os.getcwd(), TEX_FILE), "r") as f:
+    with open(os.path.join(os.getcwd(), TEX_FILE), "r", encoding="utf-8") as f:
         filestring = f.read()
 
     filestring = filestring.replace("FIRSTNAME", first_name)
@@ -35,10 +65,13 @@ def generate_cover_letter(
     filestring = filestring.replace("EMAIL", email)
     filestring = filestring.replace("TITLE", title)
     filestring = filestring.replace("COMPANYNAME", company_name)
+
+    body = normalize_unicode(body)
+    body = escape_latex(body)
+    body = body.replace("\n", "\\\\")
     filestring = filestring.replace("CONTENTBODY", body)
 
     return filestring
-
 
 def compile_tex(filestring, company_name):
     """Write the filled-in tex string to its own file, compile it, then
@@ -48,7 +81,7 @@ def compile_tex(filestring, company_name):
     base_name = f"{company_name}_cover_letter"
     output_tex = os.path.join(OUTPUT_DIR, f"{base_name}.tex")
 
-    with open(output_tex, "w") as f:
+    with open(output_tex, "w", encoding="utf-8") as f:
         f.write(filestring)
 
     for _ in range(2):  # run twice to resolve references
@@ -80,10 +113,10 @@ def compile_tex(filestring, company_name):
     return pdf_path
 
 
-if __name__ == "__main__":
+def cv_pipeline(company_name, title, body):
     filled = generate_cover_letter(
-        company_name="Test",
-        title="Software Engineer",
-        body="Example paragraph content here.",
+        company_name=company_name,
+        title=title,
+        body=body,
     )
-    compile_tex(filled, "Test")
+    compile_tex(filled, company_name)

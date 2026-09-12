@@ -63,7 +63,7 @@ def scrape_job(url: str) -> dict:
     }
 
 
-def main(url, out=None):
+def scrape(url, out=None):
     try:
         result = scrape_job(url)
     except requests.exceptions.RequestException as e:
@@ -76,7 +76,3 @@ def main(url, out=None):
         print(f"Saved to {out}")
     else:
         return json.dumps(result, indent=2, ensure_ascii=False)
-
-
-if __name__ == "__main__":
-    print(main("https://jobright.ai/jobs/info/68f97780a628d10664e8d20f"))
